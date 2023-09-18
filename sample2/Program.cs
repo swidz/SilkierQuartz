@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Quartz;
 using SilkierQuartz;
 using SilkierQuartz.Example;
 using SilkierQuartz.Example.Jobs;
 using System.Configuration;
+using System.Reflection;
 using WebApplication1.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,12 +18,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
 builder.Services.AddRazorPages();
 
 var services = builder.Services;
 var Configuration =builder.Configuration;
+
+
+var quartzConfiguration = Configuration.GetSection("Quartz");
+
 services.AddSilkierQuartz(options =>
 {
     options.VirtualPathRoot = "/quartz";
@@ -33,24 +41,19 @@ services.AddSilkierQuartz(options =>
         DayOfWeekStartIndexZero = false //Quartz uses 1-7 as the range
     };
 }
-#if ENABLE_AUTH
-            ,
-            authenticationOptions =>
-            {
-                authenticationOptions.AuthScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                authenticationOptions.SilkierQuartzClaim = "Silkier";
-                authenticationOptions.SilkierQuartzClaimValue = "Quartz";
-                authenticationOptions.UserName = "admin";
-                authenticationOptions.UserPassword = "password";
-                authenticationOptions.AccessRequirement = SilkierQuartzAuthenticationOptions.SimpleAccessRequirement.AllowOnlyUsersWithClaim;
-            }
-#else
     ,
          authenticationOptions =>
          {
              authenticationOptions.AccessRequirement = SilkierQuartzAuthenticationOptions.SimpleAccessRequirement.AllowAnonymous;
-         }
-#endif
+         },
+         stdSchedulerFactoryOptions =>
+         {
+             stdSchedulerFactoryOptions.Add(quartzConfiguration
+                 .Get<Dictionary<string, string>>()
+                 .ToNameValueCollection());
+         },
+         () => AssemblyHelper.GetAssembliesFromExecutionFolder(Assembly.GetExecutingAssembly())
+
             );
 services.AddOptions();
 services.Configure<AppSettings>(Configuration);
@@ -112,5 +115,20 @@ app.UseQuartzJob<InjectSampleJob>(() =>
     return result;
 });
 #endregion
+
+using (var scope = app.Services.CreateScope())
+{
+    var services2 = scope.ServiceProvider;    
+
+    try
+    {        
+        var context = services2.GetRequiredService<ApplicationDbContext>();
+        await context.Database.EnsureCreatedAsync();
+    }
+    catch (Exception ex)
+    {     
+        throw;
+    }
+}
 
 app.Run();

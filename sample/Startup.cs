@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Quartz;
 using SilkierQuartz.Example.Jobs;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace SilkierQuartz.Example
 {
@@ -33,26 +34,15 @@ namespace SilkierQuartz.Example
                 {
                     DayOfWeekStartIndexZero = false //Quartz uses 1-7 as the range
                 };
-            }
-#if ENABLE_AUTH
-            ,
-            authenticationOptions =>
-            {
-                authenticationOptions.AuthScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                authenticationOptions.SilkierQuartzClaim = "Silkier";
-                authenticationOptions.SilkierQuartzClaimValue = "Quartz";
-                authenticationOptions.UserName = "admin";
-                authenticationOptions.UserPassword = "password";
-                authenticationOptions.AccessRequirement = SilkierQuartzAuthenticationOptions.SimpleAccessRequirement.AllowOnlyUsersWithClaim;
-            }
-#else 
-    ,
+            },
             authenticationOptions =>
             {
                 authenticationOptions.AccessRequirement = SilkierQuartzAuthenticationOptions.SimpleAccessRequirement.AllowAnonymous;
-            }
-#endif
+            },
+            null,
+            () => AssemblyHelper.GetAssembliesFromExecutionFolder(Assembly.GetExecutingAssembly())
             );
+
             services.AddOptions();
             services.Configure<AppSettings>(Configuration);
             services.Configure<InjectProperty>(options => { options.WriteText = "This is inject string"; });

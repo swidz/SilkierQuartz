@@ -8,16 +8,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="6.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.4" />
+    <PackageReference Include="Quartz.Serialization.Json" Version="3.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\src\Quartz.Plugins.RecentHistory\Quartz.Plugins.RecentHistory.csproj" />
     <ProjectReference Include="..\src\SilkierQuartz\SilkierQuartz.csproj" />
+    <ProjectReference Include="..\src\TestJobs\TestJobs.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\Migrations\" />
   </ItemGroup>
 
 </Project>
